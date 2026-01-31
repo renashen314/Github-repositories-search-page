@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import "./App.css";
 import { useState } from "react";
+import RepoCard from "./RepoCard";
 
 function App() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,27 +42,29 @@ function App() {
 
   return (
     <>
-      <div>
-        <h1>Github Repository Search</h1>
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => handleKeyDown(e)}
-          placeholder="Search"
-        />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col justify-center">
+          <h1 className="text-3xl font-semibold py-4">
+            Github Repository Search
+          </h1>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => handleKeyDown(e)}
+            placeholder="Search"
+            className="w-full p-2 border rounded-md border-gray-300"
+          />
+        </div>
         {isLoading && <p>Loading...</p>}
         {error && <p>An error has occured: {error.message}</p>}
-        <ul>
-          {data?.items.slice(0, 10).map((repo, index) => (
-            <li key={index}>
-              <a href={repo.html_url}>{repo.full_name}</a>
-              <p>{repo.description}</p>
-              <p>{repo.stargazers_count} stars</p>
-              <p>{repo.updated_at}</p>
-            </li>
-          ))}
-        </ul>
+        <div>
+          <ul>
+            {data?.items.slice(0, 10).map((repo, index) => (
+              <RepoCard repo={repo} index={index} />
+            ))}
+          </ul>
+        </div>
       </div>
     </>
   );
