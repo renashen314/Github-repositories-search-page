@@ -1,46 +1,42 @@
-import { useQueryClient } from "@tanstack/react-query";
+import useFetchRepo from "./hooks/useFetchRepo";
 import "./App.css";
 import { useState } from "react";
 import RepoCard from "./RepoCard";
 
 function App() {
+  const [input, setInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const [sortByRule, setSortByRule] = useState("");
   const [itemsPerPageRule, setItemsPerPageRule] = useState(10);
+  const [sortByRule, setSortByRule] = useState("");
   const [orderRule, setOrderRule] = useState("");
 
-  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [cursors, setCursors] = useState([null]); // cursors[0] = null for page 1
 
-  const fetchRepo = async (query, itemsPerPage, sortBy, orderBy) => {
-    setData(null);
-    setError(null);
-    setIsLoading(true);
-    try {
-      const result = await queryClient.fetchQuery({
-        queryKey: ["repositories", [query, itemsPerPage]],
-        queryFn: async () => {
-          const response = await fetch(
-            `https://api.github.com/search/repositories?q=${query}&per_page=${itemsPerPage}&sort=${sortBy}&order=${orderBy}`,
-          );
-          if (!response.ok) throw new Error("Network response was not ok");
-          return response.json();
-        },
+  const currentCursor = cursors[page - 1] ?? null;
+
+  const { data, isLoading, error } = useFetchRepo({
+    searchTerm,
+    itemsPerPage: itemsPerPageRule,
+    sortBy: sortByRule,
+    orderBy: orderRule,
+  });
+
+  const goToNextPage = () => {
+    if (data?.pageInfo?.hasNextPage) {
+      const nextCursor = data.pageInfo.endCursor;
+      setCursors((prev) => {
+        const updated = [...prev];
+        updated[page] = nextCursor;
+        return updated;
       });
-      setData(result);
-    } catch (error) {
-      setError(error as Error);
-    } finally {
-      setIsLoading(false);
+      setPage((p) => p + 1);
     }
   };
 
-  const handleKeyDown = async (e) => {
-    if (e.key === "Enter") {
-      await fetchRepo(searchTerm, itemsPerPageRule, sortByRule, orderRule);
+  const goToPrevPage = () => {
+    if (page > 1) {
+      setPage((p) => p - 1);
     }
   };
 
@@ -53,9 +49,11 @@ function App() {
           </h1>
           <input
             type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e)}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") setSearchTerm(input);
+            }}
             placeholder="Search"
             className="w-full p-2 border rounded-md border-gray-300"
           />
@@ -120,6 +118,23 @@ function App() {
           {/* pagination */}
           <div></div>
         </div>
+        {/* <div className="flex items-center gap-2">
+          <button
+            onClick={onPrevPage}
+            disabled={!hasPrevPage || isLoading}
+            className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-full hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
+          >
+            Prev
+          </button>
+          <span className="text-sm text-gray-600">Page {page}</span>
+          <button
+            onClick={onNextPage}
+            disabled={!hasNextPage || isLoading}
+            className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-full hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div> */}
       </div>
     </>
   );
