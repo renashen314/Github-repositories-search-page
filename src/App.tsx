@@ -9,34 +9,24 @@ function App() {
   const [itemsPerPageRule, setItemsPerPageRule] = useState(10);
   const [sortByRule, setSortByRule] = useState("");
   const [orderRule, setOrderRule] = useState("");
-
-  const [page, setPage] = useState(1);
-  const [cursors, setCursors] = useState([null]); // cursors[0] = null for page 1
-
-  const currentCursor = cursors[page - 1] ?? null;
+  const [pageNum, setPageNum] = useState(1);
 
   const { data, isLoading, error } = useFetchRepo({
     searchTerm,
     itemsPerPage: itemsPerPageRule,
     sortBy: sortByRule,
     orderBy: orderRule,
+    pageNum: pageNum,
   });
 
   const goToNextPage = () => {
-    if (data?.pageInfo?.hasNextPage) {
-      const nextCursor = data.pageInfo.endCursor;
-      setCursors((prev) => {
-        const updated = [...prev];
-        updated[page] = nextCursor;
-        return updated;
-      });
-      setPage((p) => p + 1);
-    }
+    //needs to add validation check in the future
+    setPageNum((p) => p + 1);
   };
 
   const goToPrevPage = () => {
-    if (page > 1) {
-      setPage((p) => p - 1);
+    if (pageNum > 1) {
+      setPageNum((p) => p - 1);
     }
   };
 
@@ -118,23 +108,25 @@ function App() {
           {/* pagination */}
           <div></div>
         </div>
-        {/* <div className="flex items-center gap-2">
-          <button
-            onClick={onPrevPage}
-            disabled={!hasPrevPage || isLoading}
-            className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-full hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
-          >
-            Prev
-          </button>
-          <span className="text-sm text-gray-600">Page {page}</span>
-          <button
-            onClick={onNextPage}
-            disabled={!hasNextPage || isLoading}
-            className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-full hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
-          >
-            Next
-          </button>
-        </div> */}
+        {data && (
+          <div className="flex items-center justify-center gap-2 p-4">
+            <button
+              onClick={goToPrevPage}
+              disabled={pageNum === 1 || isLoading}
+              className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-full hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
+            >
+              Prev
+            </button>
+            <span className="text-sm text-gray-600">Page {pageNum}</span>
+            <button
+              onClick={goToNextPage}
+              disabled={isLoading}
+              className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-full hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
     </>
   );

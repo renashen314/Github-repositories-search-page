@@ -5,6 +5,7 @@ type fetchParams = {
   itemsPerPage: number;
   sortBy: string;
   orderBy: string;
+  pageNum: number;
 };
 
 const useFetchRepo = ({
@@ -12,15 +13,20 @@ const useFetchRepo = ({
   itemsPerPage,
   sortBy,
   orderBy,
+  pageNum,
 }: fetchParams) => {
   const params = new URLSearchParams({
     q: searchTerm,
     per_page: itemsPerPage.toString(),
     sort: sortBy,
     order: orderBy,
+    page: pageNum.toString(),
   });
   const query = useQuery({
-    queryKey: ["repositories", [searchTerm, itemsPerPage, sortBy, orderBy]],
+    queryKey: [
+      "repositories",
+      [searchTerm, itemsPerPage, sortBy, orderBy, pageNum],
+    ],
     queryFn: async () => {
       const response = await fetch(
         `https://api.github.com/search/repositories?${params}`,
