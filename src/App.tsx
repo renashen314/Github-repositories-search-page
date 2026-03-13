@@ -1,46 +1,32 @@
-import { useQueryClient } from "@tanstack/react-query";
+import useFetchRepo from "./hooks/useFetchRepo";
 import "./App.css";
 import { useState } from "react";
 import RepoCard from "./RepoCard";
 
 function App() {
+  const [input, setInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const [sortByRule, setSortByRule] = useState("");
   const [itemsPerPageRule, setItemsPerPageRule] = useState(10);
+  const [sortByRule, setSortByRule] = useState("");
   const [orderRule, setOrderRule] = useState("");
+  const [pageNum, setPageNum] = useState(1);
 
-  const queryClient = useQueryClient();
+  const { data, isLoading, error } = useFetchRepo({
+    searchTerm,
+    itemsPerPage: itemsPerPageRule,
+    sortBy: sortByRule,
+    orderBy: orderRule,
+    pageNum: pageNum,
+  });
 
-  const fetchRepo = async (query, itemsPerPage, sortBy, orderBy) => {
-    setData(null);
-    setError(null);
-    setIsLoading(true);
-    try {
-      const result = await queryClient.fetchQuery({
-        queryKey: ["repositories", [query, itemsPerPage]],
-        queryFn: async () => {
-          const response = await fetch(
-            `https://api.github.com/search/repositories?q=${query}&per_page=${itemsPerPage}&sort=${sortBy}&order=${orderBy}`,
-          );
-          if (!response.ok) throw new Error("Network response was not ok");
-          return response.json();
-        },
-      });
-      setData(result);
-    } catch (error) {
-      setError(error as Error);
-    } finally {
-      setIsLoading(false);
-    }
+  const goToNextPage = () => {
+    //needs to add validation check in the future
+    setPageNum((p) => p + 1);
   };
 
-  const handleKeyDown = async (e) => {
-    if (e.key === "Enter") {
-      await fetchRepo(searchTerm, itemsPerPageRule, sortByRule, orderRule);
+  const goToPrevPage = () => {
+    if (pageNum > 1) {
+      setPageNum((p) => p - 1);
     }
   };
 
@@ -53,9 +39,11 @@ function App() {
           </h1>
           <input
             type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e)}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") setSearchTerm(input);
+            }}
             placeholder="Search"
             className="w-full p-2 border rounded-md border-gray-300"
           />
@@ -120,6 +108,25 @@ function App() {
           {/* pagination */}
           <div></div>
         </div>
+        {data && (
+          <div className="flex items-center justify-center gap-2 p-4">
+            <button
+              onClick={goToPrevPage}
+              disabled={pageNum === 1 || isLoading}
+              className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-full hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
+            >
+              Prev
+            </button>
+            <span className="text-sm text-gray-600">Page {pageNum}</span>
+            <button
+              onClick={goToNextPage}
+              disabled={isLoading}
+              className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-full hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
